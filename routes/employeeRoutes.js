@@ -1,7 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const {getEmployees, createEmployee, getEmployee, updateEmployee, deleteEmployee, searchEmployees} = require("../controllers/employeeController")
+const validateToken = require('../middleware/validateTokenHandler')
 
+router.use(validateToken)
 
 router.get('/',getEmployees)
 

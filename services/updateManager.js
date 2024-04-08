@@ -6,15 +6,15 @@ const updateManagerAndTeam = asyncHandler(async function (employeeId, teamId) {
         try{
             if(teamId){
                 let currentManager;
-                [currentManager] = await db.query('SELECT id, team_id FROM employees WHERE team_id = ? AND is_manager = true', [teamId]);
+                [currentManager] = await db.query("SELECT id, team_id FROM employees WHERE team_id = ? AND is_manager = true AND role = 'employee'", [teamId]);
 
                 if (currentManager && currentManager.id !== employeeId) {
-                    await db.query('UPDATE employees SET is_manager = false WHERE id = ?', [currentManager.id]);
+                    await db.query("UPDATE employees SET is_manager = false WHERE id = ? and role = 'employee'", [currentManager.id]);
                 }
 
                 await db.query('UPDATE teams SET manager_id = ? WHERE id = ?', [employeeId, teamId]);
 
-                await db.query('UPDATE employees SET is_manager = true WHERE id = ?', [employeeId]);
+                await db.query("UPDATE employees SET is_manager = true WHERE id = ? and role = 'employee'", [employeeId]);
                 console.log('Manager and team updated successfully.');
                 return {};
             }

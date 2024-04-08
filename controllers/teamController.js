@@ -5,7 +5,7 @@ const db = require('../services/db');
 
 //@desc Get all teams
 //@route GET /teams
-//@access public
+//@access private
 let result;
 
 const getTeams = asyncHandler(async function(req,res){
@@ -21,7 +21,7 @@ const getTeams = asyncHandler(async function(req,res){
 
 //@desc create new team
 //@route POST /teams
-//@access public
+//@access private
 const createTeam = asyncHandler(async function(req,res){
     const {name, manager_id,employer_ids} = req.body;
 
@@ -48,7 +48,7 @@ const createTeam = asyncHandler(async function(req,res){
 
 //@desc get particular team
 //@route GET /teams/:id
-//@access public
+//@access private
 const getTeam = asyncHandler(async function(req,res){
     try{
         result = await db.query(`select * from teams where id = ?`,[req.params.id])
@@ -62,7 +62,7 @@ const getTeam = asyncHandler(async function(req,res){
 
 //@desc update particular team
 //@route PATCH /teams/:id
-//@access public
+//@access private
 const updateTeam = asyncHandler(async function(req,res){
     const {name, manager_id,employer_ids} = req.body;
 
@@ -94,8 +94,14 @@ const updateTeam = asyncHandler(async function(req,res){
 
 //@desc delete particular team
 //@route DELETE /teams/:id
-//@access public
+//@access private
 const deleteTeam = asyncHandler(async function(req,res){
+
+    if(req.user.role !== "admin"){
+        res.status(403)
+        throw new Error("user didn't have permission to delete any team")
+    }
+
     try{
         await removeisManager(req.params.id)
         await removeEmployerFromTeam(req.params.id)
@@ -109,7 +115,7 @@ const deleteTeam = asyncHandler(async function(req,res){
 
 //@desc search teams
 //@route GET /teams/search
-//@access public
+//@access private
 const searchTeams = asyncHandler(async function(req,res){
     const { key } = req.query;
     const data = `%${key}%`;

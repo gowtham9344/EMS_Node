@@ -1,5 +1,11 @@
-const asyncHandler = require("express-async-handler");
+const asyncHandler = require("express-async-handler")
+
 const employeeError = asyncHandler(async function(req,res,next){
+    if(req.user.role !== "admin"){
+        res.status(403)
+        throw new Error("user didn't have permission to update an employee")
+    }
+
     const {name, email, address, mobile,team_id,is_manager} = req.body;
     const errors = {} 
 
@@ -10,6 +16,7 @@ const employeeError = asyncHandler(async function(req,res,next){
         errors["email"] = "email is mandatory field"
         errors["address"] = "address is mandatory field"
         errors["mobile"] = "mobile is mandatory field"
+        errors["password"] = "password is mandatory field"
     }
 
     if (is_manager && !team_id) {

@@ -11,7 +11,8 @@ const createEmployeeTable = asyncHandler(async () => {
             mobile VARCHAR(255) NOT NULL UNIQUE,
             is_manager BOOLEAN DEFAULT FALSE,
             team_id INT,
-            role VARCHAR(255) NOT NULL
+            role VARCHAR(255) NOT NULL,
+            password_digest VARCHAR(255) NOT NULL
         )
     `)
     console.log('Employees table created or already exists.');

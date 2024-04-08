@@ -1,13 +1,15 @@
 const express = require('express');
 const errorHandler = require('./middleware/errorHandler');
 const dotenv = require('dotenv').config()
-const intialTable = require('./services/rundb.js')
+const intialTable = require('./services/rundb.js');
+const initialSeed = require('./services/initialSeed.js');
 
 const app = express()
 const port = process.env.PORT || 8000;
 
 app.use(express.json())
 
+app.use("/users",require('./routes/userRoutes.js'))
 app.use("/employees",require('./routes/employeeErrorRoutes.js'))
 app.use("/employees",require('./routes/employeeRoutes'))
 app.use("/teams",require('./routes/teamErrorRoutes.js'))

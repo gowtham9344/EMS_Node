@@ -2,16 +2,17 @@ const asyncHandler = require("express-async-handler");
 const db = require('../services/db')
 const updateManagerAndTeam = require('../services/updateManager');
 const editEmployee = require("../services/editEmployee");
-const removeManager = require("../services/removeManager");
+const {removeManager} = require("../services/removeManager");
+const bcrypt = require("bcrypt")
 
 let result;
 
 //@desc Get all employees
 //@route GET /employees
-//@access public
+//@access private
 const getEmployees = asyncHandler(async function(req,res){
     try{
-        result = await db.query("select * from employees")
+        result = await db.query("select id,name,email,mobile,address,team_id,is_manager from employees where role = 'employee'")
     }catch(error){
         res.status(500);
         throw error;
@@ -22,19 +23,22 @@ const getEmployees = asyncHandler(async function(req,res){
 
 //@desc create new employee
 //@route POST /employees
-//@access public
+//@access private
 const createEmployee = asyncHandler(async function(req,res){
     const {name, email, address, mobile,team_id,is_manager} = req.body;
     role = "employee"
+    let password = "Default@123"
+
+    let hashedPassword = await bcrypt.hash(password,10);
 
     try{
         if(!team_id){
-            result = await db.query(`INSERT INTO employees (name, email, address, mobile, is_manager, team_id, role)
-            VALUES (?, ?, ?, ?, false, NULL,?)`,[name,email,address,mobile,role])
+            result = await db.query(`INSERT INTO employees (name, email, address, mobile, is_manager, team_id, role, password_digest)
+            VALUES (?, ?, ?, ?, false, NULL, ?, ?)`,[name,email,address,mobile,role,hashedPassword])
         }
         else{   
-            result = await db.query(`INSERT INTO employees (name, email, address, mobile, is_manager, team_id, role)
-            VALUES (?, ?, ?, ?, false, ?, ?)`,[name,email,address,mobile,team_id,role])
+            result = await db.query(`INSERT INTO employees (name, email, address, mobile, is_manager, team_id, role, password_digest)
+            VALUES (?, ?, ?, ?, false, ?, ?, ?)`,[name,email,address,mobile,team_id,role,hashedPassword])
 
             if(is_manager == true){
                 await updateManagerAndTeam(result.insertId,team_id)
@@ -50,11 +54,11 @@ const createEmployee = asyncHandler(async function(req,res){
 
 //@desc get particular employee
 //@route GET /employees/:id
-//@access public
+//@access private
 const getEmployee = asyncHandler(async function(req,res){
 
     try{
-        result = await db.query(`select * from employees where id = ?`,[req.params.id])
+        result = await db.query(`select id,name,email,mobile,address,team_id,is_manager from employees where id = ? and role = 'employee'`,[req.params.id])
     }
     catch(error){
         res.status(500);
@@ -66,7 +70,7 @@ const getEmployee = asyncHandler(async function(req,res){
 
 //@desc update particular employee
 //@route PATCH /employees/:id
-//@access public
+//@access private
 const updateEmployee = asyncHandler(async function(req,res){
     const {name, email, address, mobile,team_id,is_manager} = req.body;
 
@@ -85,11 +89,12 @@ const updateEmployee = asyncHandler(async function(req,res){
                 team_id = ?, 
                 is_manager = ? 
             WHERE 
-                id = ?
+                id = ? and 
+                role = 'employee'
         `, [name, email, address, mobile, team_id, is_manager ? true : false, employeeId]);
         }
         else{        
-            await db.query(`UPDATE employees SET name = ?, email = ?, address = ?, mobile = ?,is_manager = false,team_id = NULL WHERE id = ?`, [name, email, address, mobile, employeeId]);
+            await db.query(`UPDATE employees SET name = ?, email = ?, address = ?, mobile = ?,is_manager = false,team_id = NULL WHERE id = ? and role = 'employee'`, [name, email, address, mobile, employeeId]);
         }
     }
     catch(error){
@@ -102,16 +107,21 @@ const updateEmployee = asyncHandler(async function(req,res){
 
 //@desc delete particular employee
 //@route DELETE /employees/:id
-//@access public
+//@access private
 const deleteEmployee = asyncHandler(async function(req,res){
 
+    if(req.user.role !== "admin"){
+        res.status(403)
+        throw new Error("user didn't have permission to delete an employee")
+    }
+
     try{
-        result = await db.query(`select * from employees where id = ${req.params.id}`)
+        result = await db.query(`select * from employees where id = ${req.params.id} and role = 'employee'`)
 
         if(result[0].is_manager){
             await removeManager(result[0].team_id)
         }
-        await db.query(`DELETE FROM employees WHERE id = ?`, [req.params.id]);
+        await db.query(`DELETE FROM employees WHERE id = ? and role = 'employee'`, [req.params.id]);
     }catch(error){
         res.status(500);
         throw error;
@@ -121,13 +131,13 @@ const deleteEmployee = asyncHandler(async function(req,res){
 
 //@desc search employees
 //@route GET /employees/search
-//@access public
+//@access private
 const searchEmployees = asyncHandler(async function(req,res){
     const { key } = req.query;
     const data = `%${key}%`;
 
     try{
-        result = await db.query("SELECT * FROM employees WHERE name LIKE ? OR email LIKE ? OR mobile LIKE ?", [data, data, data]);
+        result = await db.query("SELECT id,name,email,mobile,address,team_id,is_manager FROM employees WHERE (name LIKE ? OR email LIKE ? OR mobile LIKE ? ) AND role = 'employee'", [data, data, data]);
     }catch(error){
         res.status(500)
         throw error

@@ -1,6 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const {teamError, teamSearchError} = require('../services/teamError')
+const validateToken = require('../middleware/validateTokenHandler')
+
+router.use(validateToken)
 
 router.patch('/:id(\\d+)',teamError)
 

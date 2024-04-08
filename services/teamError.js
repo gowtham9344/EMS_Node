@@ -1,7 +1,13 @@
 const asyncHandler = require("express-async-handler");
 const teamError = asyncHandler(async function(req,res,next){
+    if(req.user.role !== "admin"){
+        res.status(403)
+        throw new Error("user didn't have permission to create new team")
+    }
+
     const {name} = req.body;
     const errors = {} 
+
 
     //checking present
     if(!name){
