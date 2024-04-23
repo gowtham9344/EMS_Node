@@ -12,7 +12,7 @@ let result;
 //@access private
 const getEmployees = asyncHandler(async function(req,res){
     try{
-        result = await db.query("select id,name,email,mobile,address,team_id,is_manager from employees where role = 'employee'")
+        result = await db.query("select id,name,email,mobile,address,team_id,is_manager from employees where role = 'employee' order by name")
     }catch(error){
         res.status(500);
         throw error;
@@ -28,6 +28,24 @@ const createEmployee = asyncHandler(async function(req,res){
     const {name, email, address, mobile,team_id,is_manager} = req.body;
     role = "employee"
     let password = "Default@123"
+
+    const errors = {} 
+
+    result = await db.query(`select * from employees where email = ?`,[email])
+
+    let result1 = await db.query(`select * from employees where mobile = ?`,[mobile])
+
+    if(result.length > 0){
+        errors.email = "email already taken";
+    }
+    if(result1.length > 0){
+        errors.mobile = "mobile number already taken"
+    }
+
+    if (Object.keys(errors).length > 0) {
+        res.status(400);
+        throw new Error(JSON.stringify(errors))
+    }
 
     let hashedPassword = await bcrypt.hash(password,10);
 
@@ -49,7 +67,7 @@ const createEmployee = asyncHandler(async function(req,res){
         res.status(500);
         throw error;
     }
-    res.status(201).json({message:"employee created successfully"})
+    res.status(201).json([{message:"employee created successfully"}])
 })
 
 //@desc get particular employee
@@ -75,6 +93,26 @@ const updateEmployee = asyncHandler(async function(req,res){
     const {name, email, address, mobile,team_id,is_manager} = req.body;
 
     const employeeId = req.params.id;
+
+
+    const errors = {} 
+
+    result = await db.query(`select * from employees where email = ? and id != ?`,[email,employeeId])
+
+    let result1 = await db.query(`select * from employees where mobile = ? and id != ?`,[mobile,employeeId])
+
+    if(result.length > 0){
+        errors.email = "email already taken";
+    }
+    if(result1.length > 0){
+        errors.mobile = "mobile number already taken"
+    }
+
+    if (Object.keys(errors).length > 0) {
+        res.status(400);
+        throw new Error(JSON.stringify(errors))
+    }
+
     
     try{
         await editEmployee(employeeId,team_id,is_manager ? true : false)
@@ -102,7 +140,7 @@ const updateEmployee = asyncHandler(async function(req,res){
         throw error;
     }
 
-    res.status(200).json({message:"employee updated successfully"})
+    res.status(200).json([{message:"employee updated successfully"}])
 })
 
 //@desc delete particular employee
@@ -126,7 +164,7 @@ const deleteEmployee = asyncHandler(async function(req,res){
         res.status(500);
         throw error;
     }
-    res.status(200).json({message:"deleted successfully"})
+    res.status(200).json([{message:"deleted successfully"}])
 })
 
 //@desc search employees
@@ -137,7 +175,7 @@ const searchEmployees = asyncHandler(async function(req,res){
     const data = `%${key}%`;
 
     try{
-        result = await db.query("SELECT id,name,email,mobile,address,team_id,is_manager FROM employees WHERE (name LIKE ? OR email LIKE ? OR mobile LIKE ? ) AND role = 'employee'", [data, data, data]);
+        result = await db.query("SELECT id,name,email,mobile,address,team_id,is_manager FROM employees WHERE (name LIKE ? OR email LIKE ? OR mobile LIKE ? ) AND role = 'employee' order by name", [data, data, data]);
     }catch(error){
         res.status(500)
         throw error
@@ -145,4 +183,18 @@ const searchEmployees = asyncHandler(async function(req,res){
     res.status(200).json(result)
 })
 
-module.exports = {getEmployees, createEmployee, getEmployee, updateEmployee, deleteEmployee, searchEmployees};
+//@desc not teamed employees
+//@route GET /employees/noteam
+//@access private
+const availableEmployees = asyncHandler(async function(req,res){
+
+    try{
+        result = await db.query("SELECT id,name,email,mobile,address,team_id,is_manager FROM employees WHERE ( team_id is NULL ) AND role = 'employee' order by name");
+    }catch(error){
+        res.status(500)
+        throw error
+    }
+    res.status(200).json(result)
+})
+
+module.exports = {getEmployees, createEmployee, getEmployee, updateEmployee, deleteEmployee, searchEmployees,availableEmployees};

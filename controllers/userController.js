@@ -26,10 +26,10 @@ const loginUser = asyncHandler(async function(req,res){
                     role: result.role
                 }
             }, process.env.ACCESS_TOKEN_SECRET, {
-                expiresIn: "1h"
+                expiresIn: "5d"
             });
 
-            res.status(200).json({ accessToken });
+            res.status(200).json({ accessToken:accessToken,isAdmin:result.role === 'admin',id:result.id });
         } else {
             res.status(401)
             throw new Error("Invalid email or password");
@@ -41,7 +41,7 @@ const loginUser = asyncHandler(async function(req,res){
 })
 
 //@desc current user info
-//@route GET /users/currentUser
+//@route GET /users/current
 //@access private
 const currentUser = asyncHandler(async function(req,res){
     let result;
@@ -84,7 +84,7 @@ const editUser = asyncHandler(async function(req,res){
     }
 
     if(password !== password_confirmation){
-        errors["password_confirmation"] = "password confirmation must be same as password";
+        errors["passwordConfirmation"] = "password confirmation must be same as password";
     }
 
     if (Object.keys(errors).length > 0) {

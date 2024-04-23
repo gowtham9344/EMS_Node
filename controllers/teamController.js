@@ -10,7 +10,10 @@ let result;
 
 const getTeams = asyncHandler(async function(req,res){
     try{
-        result = await db.query("select * from teams")
+        result = await db.query(`SELECT teams.id as id, teams.name AS name, teams.manager_id, employees.name AS manager_name
+        FROM teams
+        LEFT JOIN employees ON teams.manager_id = employees.id order by teams.name`)
+        console.log(result)
     }catch(error){
         res.status(500)
         throw error
@@ -24,6 +27,20 @@ const getTeams = asyncHandler(async function(req,res){
 //@access private
 const createTeam = asyncHandler(async function(req,res){
     const {name, manager_id,employer_ids} = req.body;
+
+    const errors = {} 
+
+    result = await db.query(`select * from teams where name = ?`,[name])
+
+    if(result.length > 0){
+        errors.name = "team name already taken";
+    }
+
+    if (Object.keys(errors).length > 0) {
+        res.status(400);
+        throw new Error(JSON.stringify(errors))
+    }
+
 
     try{
         if (manager_id) {
@@ -43,7 +60,7 @@ const createTeam = asyncHandler(async function(req,res){
         res.status(500)
         throw error
     }
-    res.status(200).json({message:"team created succesfully"})
+    res.status(200).json([{message:"team created succesfully"}])
 })
 
 //@desc get particular team
@@ -65,6 +82,19 @@ const getTeam = asyncHandler(async function(req,res){
 //@access private
 const updateTeam = asyncHandler(async function(req,res){
     const {name, manager_id,employer_ids} = req.body;
+
+    const errors = {} 
+
+    result = await db.query(`select * from teams where name = ? and id != ?`,[name,req.params.id])
+
+    if(result.length > 0){
+        errors.name = "team name already taken";
+    }
+
+    if (Object.keys(errors).length > 0) {
+        res.status(400);
+        throw new Error(JSON.stringify(errors))
+    }
 
     try{
         if (manager_id) {
@@ -89,7 +119,7 @@ const updateTeam = asyncHandler(async function(req,res){
         res.status(500)
         throw error
     }
-    res.status(200).json({message:"team updated succesfully"})
+    res.status(200).json([{message:"team updated succesfully"}])
 })
 
 //@desc delete particular team
@@ -110,7 +140,7 @@ const deleteTeam = asyncHandler(async function(req,res){
         res.status(500)
         throw error
     }
-    res.status(200).json({message:"teams deleted successfully"})
+    res.status(200).json([{message:"teams deleted successfully"}])
 })
 
 //@desc search teams
@@ -121,7 +151,10 @@ const searchTeams = asyncHandler(async function(req,res){
     const data = `%${key}%`;
 
     try{
-        result = await db.query("select * from teams where name LIKE ?", [data])
+        result = await db.query(`
+        SELECT teams.id as id, teams.name AS name, teams.manager_id, employees.name AS manager_name
+        FROM teams
+        LEFT JOIN employees ON teams.manager_id = employees.id where teams.name LIKE ? order by teams.name`, [data])
     }catch(error){
         res.status(500)
         throw error

@@ -1,5 +1,5 @@
-const createTeamTable = require('../models/teamModel')
-const createEmployeeTable = require('../models/employeeModel')
+const createTeamTable = require('../migrations/team')
+const createEmployeeTable = require('../migrations/employee')
 const foreignKeyAdd = require('./foreignKeyAdd')
 const asyncHandler = require("express-async-handler")
 

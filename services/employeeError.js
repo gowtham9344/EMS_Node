@@ -3,7 +3,7 @@ const asyncHandler = require("express-async-handler")
 const employeeError = asyncHandler(async function(req,res,next){
     if(req.user.role !== "admin"){
         res.status(403)
-        throw new Error("user didn't have permission to update an employee")
+        throw new Error("user didn't have permission to create or update an employee")
     }
 
     const {name, email, address, mobile,team_id,is_manager} = req.body;

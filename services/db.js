@@ -12,6 +12,10 @@ async function query(sql, params) {
   }
   catch(error){
     throw error;
+  }finally {
+    if (connection) {
+      await connection.end(); 
+    }
   }
 }
 

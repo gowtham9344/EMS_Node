@@ -6,7 +6,7 @@ const db = require('../services/db')
 //@access private
 const getEmployees = asyncHandler(async function(req,res){
     try{
-        result = await db.query("select id,name,email,mobile,address,team_id,is_manager from employees where role = 'employee' and team_id = ?",[req.params.id])
+        result = await db.query("select id,name,email,mobile,address,team_id,is_manager from employees where role = 'employee' and team_id = ? order by name",[req.params.id])
     }catch(error){
         res.status(500);
         throw error;
